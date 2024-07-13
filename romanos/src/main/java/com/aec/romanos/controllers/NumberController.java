@@ -48,9 +48,9 @@ public class NumberController {
                                     value = """
             {
               "result": "MCMXCIX",
-              "status": "success",
-              "msg": "Conversion successful",
-              "count": 1
+              "count": 1,
+              "msg": "Conversion successful.",
+              "status": "success"              
             }
             """)
                     )
@@ -61,9 +61,11 @@ public class NumberController {
                             examples = @ExampleObject(
                                     value = """
             {
-              "status": "error",
-              "msg": "Invalid input",
-              "errors": ["Number must be between 1 and 3999"]
+              "message": "Invalid input",
+              "errors": [
+                "The number must be less than 4000"
+              ],
+              "status": "error"
             }
             """)
                     )
@@ -74,8 +76,8 @@ public class NumberController {
                             examples = @ExampleObject(
                                     value = """
             {
-              "status": "error",
-              "msg": "An unexpected error occurred"
+              "message": "An unexpected error occurred",
+              "status": "error"
             }
             """)
                     )
@@ -110,13 +112,45 @@ public class NumberController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Conversion successful",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class))),
+                            schema = @Schema(implementation = Map.class),
+                            examples = @ExampleObject(
+                                    value = """
+            {
+              "result": 1899,
+              "count": 2,
+              "msg": "Conversion successful.",
+              "status": "success"             
+            }
+            """)
+                    )
+            ),
             @ApiResponse(responseCode = "400", description = "Invalid input",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class))),
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Map.class),
+                    examples = @ExampleObject(
+                            value = """
+            {
+                "message": "Invalid input",
+                "errors": [
+                    "Invalid Roman numeral"
+                ],
+                "status": "error"
+            }
+            """)
+            )
+            ),
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class)))
+                            schema = @Schema(implementation = Map.class),
+                            examples = @ExampleObject(
+                                    value = """
+            {
+              "message": "An unexpected error occurred",
+              "status": "error"
+            }
+            """)
+                    )
+            )
     })
     public ResponseEntity<?> getNumber(
             @Parameter(description = "Roman numeral to convert", required = true) @RequestBody @Valid RomanToNumberDto request,
@@ -143,7 +177,7 @@ public class NumberController {
     }
 
     @GetMapping(value = "/toRoman", produces = MediaType.TEXT_PLAIN_VALUE)
-    @Operation(summary = "Convert number to Roman numeral (GET)", description = "Convert an integer to its Roman numeral representation using GET method")
+    @Operation(summary = "Converting an Arabic numeral to a Roman numeral (GET)", description = "Convert an integer to its Roman numeral representation using GET method")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Conversion successful",
                     content = @Content(mediaType = "text/plain",
@@ -157,7 +191,7 @@ public class NumberController {
     }
 
     @GetMapping(value = "/toNumber", produces = MediaType.TEXT_PLAIN_VALUE)
-    @Operation(summary = "Convert Roman numeral to number (GET)", description = "Convert a Roman numeral representation to integer using GET method")
+    @Operation(summary = "Convert a Roman numeral to an Arabic numeral (GET)", description = "Convert a Roman numeral representation to integer using GET method")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Conversion successful",
                     content = @Content(mediaType = "text/plain",
