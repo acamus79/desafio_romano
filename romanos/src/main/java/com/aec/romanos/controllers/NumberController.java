@@ -50,7 +50,7 @@ public class NumberController {
               "result": "MCMXCIX",
               "count": 1,
               "msg": "Conversion successful.",
-              "status": "success"              
+              "status": "success"             \s
             }
             """)
                     )
@@ -119,7 +119,7 @@ public class NumberController {
               "result": 1899,
               "count": 2,
               "msg": "Conversion successful.",
-              "status": "success"             
+              "status": "success"
             }
             """)
                     )
@@ -186,7 +186,8 @@ public class NumberController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<String> toRoman(
-            @Parameter(description = "Number to convert", required = true) @RequestParam int number) {
+            @Parameter(description = "Number to convert", required = true)
+            @RequestParam int number) {
         return ResponseEntity.ok(service.paramToRoman(number));
     }
 
@@ -199,9 +200,9 @@ public class NumberController {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Integer> fromRoman(
+    public ResponseEntity<String> fromRoman(
             @Parameter(description = "Roman numeral to convert", required = true) @RequestParam String roman) {
-        return ResponseEntity.ok(service.fromRoman(roman));
+        return ResponseEntity.ok(String.valueOf(service.paramToNumber(roman)));
     }
 
     private void setLocale(String language) {
