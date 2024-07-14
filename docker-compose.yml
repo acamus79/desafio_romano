@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   java_api:
     container_name: romanos-api

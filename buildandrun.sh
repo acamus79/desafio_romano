@@ -28,7 +28,7 @@ fi
 cd - || exit
 
 # Verificar si el archivo JAR existe
-jarPath="romanos/target/romanosAPI-0.0.1-SNAPSHOT.jar"
+jarPath="romanos/target/romanos-0.0.1-SNAPSHOT.jar"
 if [ ! -f "$jarPath" ]; then
     echo "El archivo JAR no se encontró en la ruta especificada: $jarPath"
     exit 1
