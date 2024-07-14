@@ -60,7 +60,7 @@ Este proyecto implementa un servicio REST para convertir números entre su repre
 
 Además, se han implementado pruebas unitarias para el controlador, el servicio de conversión de números y los DTO con sus respectivas validaciones. También se ha añadido internacionalización de los mensajes a través del encabezado Accept-Language, soportando inglés (en), español (es) y portugués (pt). La configuración de la internacionalización también cuenta con pruebas unitarias, logrando un alto nivel de cobertura. (100% en controlador y servicios)
 
-![Covertura test unitarios](assets/13-07-2024_23-51-36.jpg)
+![imagen](https://github.com/user-attachments/assets/6a209cbe-bb35-4883-b5b5-4a48d1e5c725)
 
 ## Características
 
@@ -126,6 +126,8 @@ A través de Postman y Swagger
 
   - /api/v1/toRoman
   - /api/v1/toNumber
+
+![imagen](https://github.com/user-attachments/assets/38f364f0-1215-45d1-ad70-abc2a75736c0)
   
 _____
 <p align="center">
