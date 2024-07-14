@@ -19,6 +19,7 @@ import org.springframework.validation.Errors;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -62,8 +63,7 @@ class NumberControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assert body != null;
-        assertEquals("MCMXCIX", body.get("result"));
+        assertEquals("MCMXCIX", Objects.requireNonNull(body).get("result"));
         assertEquals("success", body.get("status"));
         assertEquals("Conversion successful.", body.get("message"));
         assertNotNull(body.get("count"));
@@ -106,7 +106,7 @@ class NumberControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertEquals(1999, body.get("result"));
+        assertEquals(1999, Objects.requireNonNull(body).get("result"));
         assertEquals("success", body.get("status"));
         assertEquals("Conversion successful.", body.get("message"));
         assertNotNull(body.get("count"));
@@ -134,6 +134,7 @@ class NumberControllerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assert body != null;
         assertEquals("error", body.get("status"));
         assertEquals("An unexpected error occurred", body.get("message"));
     }
@@ -150,12 +151,11 @@ class NumberControllerTest {
 
     @Test
     void testFromRoman_Success() {
-        when(service.fromRoman("MCMXCIX")).thenReturn(1999);
-
+        when(service.paramToNumber("MCMXCIX")).thenReturn(1999);
         ResponseEntity<String> response = controller.fromRoman("MCMXCIX");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1999, response.getBody());
+        assertEquals(String.valueOf(1999), response.getBody());
     }
 
     @Test
@@ -186,8 +186,9 @@ class NumberControllerTest {
         Map<String, Object> body1 = (Map<String, Object>) response1.getBody();
         Map<String, Object> body2 = (Map<String, Object>) response2.getBody();
 
+        assert body1 != null;
         assertEquals(1, body1.get("count"));
-        assertEquals(2, body2.get("count"));
+        assertEquals(2, Objects.requireNonNull(body2).get("count"));
     }
 
     @ParameterizedTest
@@ -247,7 +248,7 @@ class NumberControllerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals("error", responseBody.get("status"));
+        assertEquals("error", Objects.requireNonNull(responseBody).get("status"));
         assertEquals("Invalid input", responseBody.get("message"));
         List<String> errorMessages = (List<String>) responseBody.get("errors");
         assertTrue(errorMessages.contains(expectedErrorMessage));
@@ -271,7 +272,7 @@ class NumberControllerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals("error", responseBody.get("status"));
+        assertEquals("error", Objects.requireNonNull(responseBody).get("status"));
         assertEquals("Invalid input", responseBody.get("message"));
         List<String> errorMessages = (List<String>) responseBody.get("errors");
         assertTrue(errorMessages.contains(expectedErrorMessage));

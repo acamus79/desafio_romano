@@ -57,7 +57,9 @@ class NumberToRomanDtoTest {
     void testNullNumber() {
         NumberToRomanDto dto = new NumberToRomanDto();
         Set<ConstraintViolation<NumberToRomanDto>> violations = validator.validate(dto);
-        assertTrue(violations.isEmpty(), "Null should be valid as @NotNull is not used");
+        assertFalse(violations.isEmpty(), "Null should not be valid as @NotNull is used");
+        assertEquals(1, violations.size(), "Should have exactly one violation");
+        assertEquals("{number.null}", violations.iterator().next().getMessage());
     }
 
     @Test
