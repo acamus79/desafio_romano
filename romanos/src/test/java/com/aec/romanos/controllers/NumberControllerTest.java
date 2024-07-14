@@ -8,96 +8,187 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+
 @SpringBootTest
-public class NumberControllerTest {
+class NumberControllerTest {
 
     @Mock
-    private RomanNumeralService romanNumeralService;
+    private RomanNumeralService service;
 
-        @Mock
-        private MessageService messageService;
+    @Mock
+    private MessageService messageService;
 
-        @Mock
-        private BindingResult bindingResult;
+    @Mock
+    private BindingResult bindingResult;
 
-        @InjectMocks
-        private NumberController numberController;
+    @InjectMocks
+    private NumberController controller;
 
-        @BeforeEach
-        void setUp() {
-            when(messageService.getMessage("result")).thenReturn("result");
-            when(messageService.getMessage("status")).thenReturn("status");
-            when(messageService.getMessage("msg")).thenReturn("msg");
-            when(messageService.getMessage("count")).thenReturn("count");
-            when(messageService.getMessage("success")).thenReturn("success");
-            when(messageService.getMessage("success_msg")).thenReturn("success_msg");
-        }
+    @BeforeEach
+    void setUp() {
+        when(messageService.getMessage("result")).thenReturn("result");
+        when(messageService.getMessage("status")).thenReturn("status");
+        when(messageService.getMessage("msg")).thenReturn("message");
+        when(messageService.getMessage("count")).thenReturn("count");
+        when(messageService.getMessage("success")).thenReturn("success");
+        when(messageService.getMessage("success_msg")).thenReturn("Conversion successful.");
+        when(messageService.getMessage("error")).thenReturn("error");
+        when(messageService.getMessage("validation_failed")).thenReturn("Invalid input");
+        when(messageService.getMessage("errors")).thenReturn("errors");
+        when(messageService.getMessage("internal_error")).thenReturn("An unexpected error occurred");
+    }
 
-        @Test
-        void testGetRomanNumber() {
-            NumberToRomanDto dto = new NumberToRomanDto();
-            dto.setNumber(5);
-            when(romanNumeralService.toRoman(5)).thenReturn("V");
+    @Test
+    void testGetRomanNumber_Success() {
+        NumberToRomanDto dto = new NumberToRomanDto();
+        dto.setNumber(1999);
+        when(service.toRoman(1999)).thenReturn("MCMXCIX");
 
-            ResponseEntity<?> response = numberController.getRomanNumber(dto, bindingResult, null);
+        ResponseEntity<?> response = controller.getRomanNumber(dto, bindingResult, null);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertTrue(response.getBody() instanceof Map);
-            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-            assertEquals("V", responseBody.get("result"));
-            assertEquals("success", responseBody.get("status"));
-            assertEquals("success_msg", responseBody.get("msg"));
-            assertEquals(1, responseBody.get("count"));
-        }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assert body != null;
+        assertEquals("MCMXCIX", body.get("result"));
+        assertEquals("success", body.get("status"));
+        assertEquals("Conversion successful.", body.get("message"));
+        assertNotNull(body.get("count"));
+    }
 
-        @Test
-        void testGetNumber() {
-            RomanToNumberDto dto = new RomanToNumberDto();
-            dto.setRoman("V");
-            when(romanNumeralService.fromRoman("V")).thenReturn(5);
+    @Test
+    void testGetRomanNumber_ValidationError() {
+        NumberToRomanDto dto = new NumberToRomanDto();
+        when(bindingResult.hasErrors()).thenReturn(true);
 
-            ResponseEntity<?> response = numberController.getNumber(dto, bindingResult, null);
+        ResponseEntity<?> response = controller.getRomanNumber(dto, bindingResult, null);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertTrue(response.getBody() instanceof Map);
-            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-            assertEquals(5, responseBody.get("result"));
-            assertEquals("success", responseBody.get("status"));
-            assertEquals("success_msg", responseBody.get("msg"));
-            assertEquals(1, responseBody.get("count"));
-        }
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
 
-        @Test
-        void testToRoman() {
-            when(romanNumeralService.paramToRoman(5)).thenReturn("V");
+    @Test
+    void testGetRomanNumber_Exception() {
+        NumberToRomanDto dto = new NumberToRomanDto();
+        dto.setNumber(1999);
+        when(service.toRoman(1999)).thenThrow(new RuntimeException("Test exception"));
+        when(messageService.getMessage("error")).thenReturn("error");
+        when(messageService.getMessage("internal_error")).thenReturn("An unexpected error occurred");
 
-            ResponseEntity<String> response = numberController.toRoman(5);
+        ResponseEntity<?> response = controller.getRomanNumber(dto, bindingResult, null);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals("V", response.getBody());
-        }
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assert body != null;
+        assertEquals("error", body.get("status"));
+        assertEquals("An unexpected error occurred", body.get("message"));
+    }
 
-        @Test
-        void testFromRoman() {
-            when(romanNumeralService.fromRoman("V")).thenReturn(5);
+    @Test
+    void testGetNumber_Success() {
+        RomanToNumberDto dto = new RomanToNumberDto();
+        dto.setRoman("MCMXCIX");
+        when(service.fromRoman("MCMXCIX")).thenReturn(1999);
 
-            ResponseEntity<Integer> response = numberController.fromRoman("V");
+        ResponseEntity<?> response = controller.getNumber(dto, bindingResult, null);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(5, response.getBody());
-        }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(1999, body.get("result"));
+        assertEquals("success", body.get("status"));
+        assertEquals("Conversion successful.", body.get("message"));
+        assertNotNull(body.get("count"));
+    }
+
+    @Test
+    void testGetNumber_ValidationError() {
+        RomanToNumberDto dto = new RomanToNumberDto();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        ResponseEntity<?> response = controller.getNumber(dto, bindingResult, null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void testGetNumber_Exception() {
+        RomanToNumberDto dto = new RomanToNumberDto();
+        dto.setRoman("MCMXCIX");
+        when(service.fromRoman("MCMXCIX")).thenThrow(new RuntimeException("Test exception"));
+        when(messageService.getMessage("error")).thenReturn("error");
+        when(messageService.getMessage("internal_error")).thenReturn("An unexpected error occurred");
+
+        ResponseEntity<?> response = controller.getNumber(dto, bindingResult, null);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals("error", body.get("status"));
+        assertEquals("An unexpected error occurred", body.get("message"));
+    }
+
+    @Test
+    void testToRoman_Success() {
+        when(service.paramToRoman(1999)).thenReturn("MCMXCIX");
+
+        ResponseEntity<String> response = controller.toRoman(1999);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("MCMXCIX", response.getBody());
+    }
+
+    @Test
+    void testFromRoman_Success() {
+        when(service.fromRoman("MCMXCIX")).thenReturn(1999);
+
+        ResponseEntity<String> response = controller.fromRoman("MCMXCIX");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1999, response.getBody());
+    }
+
+    @Test
+    void testLanguageHeader() {
+        NumberToRomanDto dto = new NumberToRomanDto();
+        dto.setNumber(1999);
+        when(service.toRoman(1999)).thenReturn("MCMXCIX");
+
+        ResponseEntity<?> response = controller.getRomanNumber(dto, bindingResult, "es");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+    }
+
+    @Test
+    void testCountIncrement() {
+        NumberToRomanDto dto1 = new NumberToRomanDto();
+        dto1.setNumber(1999);
+        RomanToNumberDto dto2 = new RomanToNumberDto();
+        dto2.setRoman("MCMXCIX");
+
+        when(service.toRoman(1999)).thenReturn("MCMXCIX");
+        when(service.fromRoman("MCMXCIX")).thenReturn(1999);
+
+        ResponseEntity<?> response1 = controller.getRomanNumber(dto1, bindingResult, null);
+        ResponseEntity<?> response2 = controller.getNumber(dto2, bindingResult, null);
+
+        Map<String, Object> body1 = (Map<String, Object>) response1.getBody();
+        Map<String, Object> body2 = (Map<String, Object>) response2.getBody();
+
+        assertEquals(1, body1.get("count"));
+        assertEquals(2, body2.get("count"));
+    }
 
     @ParameterizedTest
     @CsvSource({
@@ -110,17 +201,13 @@ public class NumberControllerTest {
             "999, CMXCIX",
             "3999, MMMCMXCIX"
     })
-    void testGetRomanNumberBoundaryValues(int number, String expectedRoman) {
-        NumberToRomanDto dto = new NumberToRomanDto();
-        dto.setNumber(number);
-        when(romanNumeralService.toRoman(number)).thenReturn(expectedRoman);
+    void testToRoman_ParameterizedSuccess(int number, String expectedRoman) {
+        when(service.paramToRoman(number)).thenReturn(expectedRoman);
 
-        ResponseEntity<?> response = numberController.getRomanNumber(dto, bindingResult, null);
+        ResponseEntity<String> response = controller.toRoman(number);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals(expectedRoman, responseBody.get("result"));
+        assertEquals(expectedRoman, response.getBody());
     }
 
     @ParameterizedTest
@@ -134,34 +221,60 @@ public class NumberControllerTest {
             "CMXCIX, 999",
             "MMMCMXCIX, 3999"
     })
-    void testGetNumberBoundaryValues(String roman, int expectedNumber) {
-        RomanToNumberDto dto = new RomanToNumberDto();
-        dto.setRoman(roman);
-        when(romanNumeralService.fromRoman(roman)).thenReturn(expectedNumber);
+    void testFromRoman_ParameterizedSuccess(String roman, int expectedNumber) {
+        when(service.paramToNumber(roman)).thenReturn(expectedNumber);
 
-        ResponseEntity<?> response = numberController.getNumber(dto, bindingResult, null);
+        ResponseEntity<String> response = controller.fromRoman(roman);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals(expectedNumber, responseBody.get("result"));
+        assertEquals(String.valueOf(expectedNumber), response.getBody());
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "MMMM", "IVI"})
-    void testGetNumberInvalidValues(String roman) {
-        RomanToNumberDto dto = new RomanToNumberDto();
-        dto.setRoman(roman);
-        when(romanNumeralService.fromRoman(roman)).thenThrow(new IllegalArgumentException("Invalid Roman numeral"));
+    @CsvSource({
+            "0, The number must be greater than 0",
+            "4000, The number must be less than 4000",
+            "-1, The number must be greater than 0"
+    })
+    void testToRoman_InvalidInput(int number, String expectedErrorMessage) {
+        NumberToRomanDto dto = new NumberToRomanDto();
+        dto.setNumber(number);
 
-        ResponseEntity<?> response = numberController.getNumber(dto, bindingResult, null);
+        Errors errors = new BeanPropertyBindingResult(dto, "numberToRomanDto");
+        errors.rejectValue("number", "error.number", expectedErrorMessage);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
+        ResponseEntity<?> response = controller.getRomanNumber(dto, errors, null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
         assertEquals("error", responseBody.get("status"));
+        assertEquals("Invalid input", responseBody.get("message"));
+        List<String> errorMessages = (List<String>) responseBody.get("errors");
+        assertTrue(errorMessages.contains(expectedErrorMessage));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "IIII, Invalid Roman numeral",
+            "VV, Invalid Roman numeral",
+            "IC, Invalid Roman numeral",
+            "MMMM, Invalid Roman numeral"
+    })
+    void testFromRoman_InvalidInput(String roman, String expectedErrorMessage) {
+        RomanToNumberDto dto = new RomanToNumberDto();
+        dto.setRoman(roman);
+
+        Errors errors = new BeanPropertyBindingResult(dto, "romanToNumberDto");
+        errors.rejectValue("roman", "error.roman", expectedErrorMessage);
+
+        ResponseEntity<?> response = controller.getNumber(dto, errors, null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertEquals("error", responseBody.get("status"));
+        assertEquals("Invalid input", responseBody.get("message"));
+        List<String> errorMessages = (List<String>) responseBody.get("errors");
+        assertTrue(errorMessages.contains(expectedErrorMessage));
     }
 
 }
-
-
